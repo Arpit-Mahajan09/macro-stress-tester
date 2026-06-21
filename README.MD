@@ -12,36 +12,61 @@ The system maps physical infrastructure networks as weighted directed graphs and
 * **Terminal UI:** Features command-line interface built with **Rich**, providing live updates, threat tables, and execution reports.
 
 
-## 🛠️ System Architecture Overview
+## System Architecture Overview
 
 The system decouples natural language understanding, discrete graph traversals, and quantitative simulations to maximize reasoning fidelity and eliminate large language model (LLM) hallucinations during mathematical computations.
-
+.
+```Plaintext
+                                  +-----------------------------------+
+                                  |      External Data Sources        |
+                                  |  (RSS: FreightWaves, CNBC, WSJ)   |
+                                  +-----------------+-----------------+
+                                                    |
+                                                    v
++---------------------------------------------------+---------------------------------------------------+
+|                                   PHASE 2: INTELLIGENCE PIPELINE                                      |
+|                                                                                                       |
+|  +-----------------------------+                                   +-------------------------------+  |
+|  |         NewsScraper         |      Raw Text (HTML parsed)       |      NewsAnalysisPipeline     |  |
+|  |  (BeautifulSoup + RSS Feed) | --------------------------------> |    (Groq + Pydantic Schema)   |  |
+|  +-----------------------------+                                   +---------------+---------------+  |
++------------------------------------------------------------------------------------+------------------+
+                                                                                     |
+                                            Extracts: {source, intensity, obsPeriod} |
+                                                                                     v
++------------------------------------------------------------------------------------+------------------+
+|                                     PHASE 3: ORCHESTRATION & UI                                       |
+|                                                                                                       |
+|                                  +-------------------------------+                                    |
+|                                  |         CLI Terminal          |                                    |
+|                                  |      (Rich: Dashboard)        |                                    |
+|                                  +---------------+---------------+                                    |
+|                                                  |                                                    |
+|                                                  v                                                    |
+|                                  +-------------------------------+                                    |
+|                                  |  LangChain Core Orchestrator  |                                    |
+|                                  |   (Agent Executor + Memory)   |                                    |
+|                                  +---------------+---------------+                                    |
++--------------------------------------------------+----------------------------------------------------+
+                                                   |
+                                     Triggers Custom Tool Call
+                                                   v
++--------------------------------------------------+----------------------------------------------------+
+|                                  PHASE 1: DETERMINISTIC MATH ENGINE                                   |
+|                                                                                                       |
+|  +-----------------------------+                                   +-------------------------------+  |
+|  |    LangChain Custom Tool    |     Passes Node + Intensity       |       NetworkX Simulator      |  |
+|  |    (simTools.py wrapper)    | --------------------------------> |  (Topological BFS Cascade)    |  |
+|  +-----------------------------+                                   +---------------+---------------+  |
+|                                                                                    |                  |
+|                                                                                    v                  |
+|                                                                    +-------------------------------+  |
+|                                                                    |   Graph State (JSON Data)     |  |
+|                                                                    +-------------------------------+  |
++-------------------------------------------------------------------------------------------------------+
+```
     
-                   +---------------------------------------+
-                   |              User CLI                 |
-                   +-------------------+-------------------+
-                                       |
-                                       v
-                   +-------------------+-------------------+
-                   |    LangChain Core Orchestrator        |
-                   | (ReAct Loop + SummaryBufferMemory)    |
-                   +-------------------+-------------------+
-                                       |
-               +-----------------------+-----------------------+
-               |                                               |
-               v                                               v
-    +----------+------------+                       +----------+------------+
-    |  Graph Traversal Tool |                       | Cascade Simulator Tool|
-    |   (NetworkX Engine)   |                       |   (NumPy / Pandas)    |
-    +----------+------------+                       +----------+------------+
-               |                                               |
-               v                                               v
-    +----------+------------+                       +----------+------------+
-    | Parses nodes, edges,  |                       | Computes cumulative   |
-    | and structural routes |                       | distributions (CDF)   |
-    | from graph state      |                       | & dynamic margins     |
-    +-----------------------+                       +-----------------------+
-## 🏗️ System Architecture
+## System Architecture
 
 The project is heavily modularized to separate the AI reasoning loop from the underlying mathematical engine:
 
@@ -113,25 +138,23 @@ Here, $B_v$ represents the node's `inventory_buffer_days` + `total_transit_time`
 
 ## Core Engineering Principles
 
-### 1. Zero-Hallucination 
+#### 1. Zero-Hallucination 
 The LangChain agent functions strictly as an analytical orchestrator. It uses a structured ReAct loop to isolate variables from unstructured user prompts. It is then passed to Python tools for execution, and a quantitative result is synthesised for user.
 
-### 2. Network Layout & Cascading Failures
+#### 2. Network Layout & Cascading Failures
 Supply networks are parsed into a directed graph $G = (V, E)$ using NetworkX.The graph is then traverssed through BFS and the imact is calulated in an $O(V + E)$ runtime complexity.
 
-### 3. Quantitative Risk Modeling
+#### 3. Quantitative Risk Modeling
 The simulator models shock waves across the structural layers using cumulative distribution functions (CDFs) to track inventory depletion over a period alongside state-space estimations of delayed margin compression over a multi-quarter window.
 
 
 ## Modification Guide 
 
-1. The time period for imact calculations is considered if not mentioned in prompt. 
+1. To modify LLM used change the Langchain agents used in `/src/agent.py`, then modify the .env file accordingly. 
 
-2. To modify LLM used change the Langchain agents used in `/src/agent.py`, then modify the .env file accordingly. 
+2. To modify the supply chain graph change the `/data/mockData.json` 
 
-3. To modify the supply chain graph change the `/data/mockData.json` 
-
-4. News sources can be modified in `/src/dataScrapper/newsScrapper.py` 
+3. News sources can be modified in `/src/dataScrapper/newsScrapper.py` 
 
 ## Lisence
 This project is licensed under the MIT License - see the LICENSE file for details.
