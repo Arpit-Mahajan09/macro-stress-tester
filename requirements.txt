@@ -17,4 +17,5 @@ requests
 
 # Environment & CLI Setup
 python-dotenv
+rich
 click
