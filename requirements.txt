@@ -1,0 +1,20 @@
+# Agent Framework
+langchain
+langchain-community
+langchain-openai
+transformers
+
+# Graph and Data Math
+networkx
+numpy
+pandas
+PyQt6
+
+# Data Scrapping
+feedparser
+beautifulsoup4
+requests
+
+# Environment & CLI Setup
+python-dotenv
+click
