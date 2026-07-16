@@ -1,0 +1,75 @@
+{
+  "_metadata": {
+    "description": "Expanded semiconductor + automotive global supply chain graph. Replaces mockData.json.",
+    "data_provenance": {
+      "grounded_in_real_data": [
+        "transit_time_days — based on 2025-2026 freight industry benchmarks (SeaRates, Freightos, Port Economics & Management, GoFreight maritime disruption reports)",
+        "topology — actual chokepoints (Strait of Malacca, Suez Canal, Panama Canal) and real port/manufacturing hub locations (TSMC Hsinchu, Penang OSAT hub, Kaohsiung, Singapore, Rotterdam, LA/Long Beach, Savannah)"
+      ],
+      "estimated_illustrative": [
+        "buffer_days — typical industry inventory-buffer ranges (chip fabs run lean ~15-20 days; auto OEMs run deeper ~25-30 days under post-2021 chip-shortage policy), not any single company's disclosed figure",
+        "volume_weight — assumed share of a target node's modeled throughput contributed by that edge; real values should come from customs/trade-flow data (e.g. UN Comtrade, ImportGenius) if you want this to be defensible",
+        "risk_score — this is the field your agent pipeline (eventParser.py + Groq) should be populating dynamically from live news. The values below are 2026 baseline placeholders, elevated where current conditions warrant it (e.g. Suez still running below pre-2023 throughput; Panama Canal still recovering from 2023-24 drought restrictions).",
+        "alt_route_cost / buffer_reduction_days — cost premiums are directionally grounded in real, widely-reported detour economics (e.g. Cape of Good Hope reroutes during Red Sea disruptions, Panama landbridge rail during the 2023-24 drought restrictions), but exact percentages are illustrative estimates, not sourced from a specific carrier's rate card. Only added to nodes where a real, commonly-used alternate route or source genuinely exists — not every node has one."
+      ]
+    },
+    "last_baseline_review": "2026-07"
+  },
+  "nodes": [
+    { "id": "TSMC_Fab_Hsinchu", "type": "manufacturing", "region": "APAC", "buffer_days": 15,
+      "has_alternate_source": true, "alt_route_name": "Samsung Foundry (Korea) Reallocation",
+      "alt_route_cost": 0.35, "buffer_reduction_days": 3 },
+    { "id": "Penang_Assembly_Test", "type": "manufacturing", "region": "APAC", "buffer_days": 20 },
+    { "id": "Chinese_Auto_Parts_Plant_Ningbo", "type": "manufacturing", "region": "APAC", "buffer_days": 12 },
+    { "id": "Port_of_Kaohsiung", "type": "logistics", "region": "APAC", "buffer_days": 5,
+      "has_alternate_source": true, "alt_route_name": "Air Freight Expedite",
+      "alt_route_cost": 2.50, "buffer_reduction_days": 10 },
+    { "id": "Port_of_Singapore", "type": "logistics", "region": "APAC", "buffer_days": 6 },
+    { "id": "Port_of_Shanghai", "type": "logistics", "region": "APAC", "buffer_days": 6 },
+    { "id": "Strait_of_Malacca", "type": "chokepoint", "region": "APAC", "buffer_days": 0,
+      "has_alternate_source": true, "alt_route_name": "Lombok/Sunda Strait Detour",
+      "alt_route_cost": 0.15, "buffer_reduction_days": 4 },
+    { "id": "Suez_Canal", "type": "chokepoint", "region": "EMEA", "buffer_days": 0,
+      "has_alternate_source": true, "alt_route_name": "Cape of Good Hope Route",
+      "alt_route_cost": 0.45, "buffer_reduction_days": 10 },
+    { "id": "Panama_Canal", "type": "chokepoint", "region": "AMER", "buffer_days": 0,
+      "has_alternate_source": true, "alt_route_name": "US Intermodal Rail Landbridge",
+      "alt_route_cost": 0.30, "buffer_reduction_days": 6 },
+    { "id": "Port_of_Rotterdam", "type": "logistics", "region": "EMEA", "buffer_days": 7 },
+    { "id": "Port_of_LA_LongBeach", "type": "logistics", "region": "AMER", "buffer_days": 10 },
+    { "id": "Port_of_Savannah", "type": "logistics", "region": "AMER", "buffer_days": 8 },
+    { "id": "Euro_Auto_Factory_Wolfsburg", "type": "manufacturing", "region": "EMEA", "buffer_days": 30 },
+    { "id": "EU_Electronics_Assembly_Eindhoven", "type": "manufacturing", "region": "EMEA", "buffer_days": 18 },
+    { "id": "US_Tech_Assembly_Austin", "type": "manufacturing", "region": "AMER", "buffer_days": 20 },
+    { "id": "US_Auto_Assembly_Detroit", "type": "manufacturing", "region": "AMER", "buffer_days": 25 },
+    { "id": "Global_Tech_Corp", "type": "corporate", "region": "Global", "buffer_days": 0 },
+    { "id": "Global_Auto_Corp", "type": "corporate", "region": "Global", "buffer_days": 0 }
+  ],
+  "edges": [
+    { "source": "TSMC_Fab_Hsinchu", "target": "Port_of_Kaohsiung", "transit_time_days": 1, "volume_weight": 0.7, "risk_score": 0.08 },
+    { "source": "TSMC_Fab_Hsinchu", "target": "Penang_Assembly_Test", "transit_time_days": 5, "volume_weight": 0.6, "risk_score": 0.12 },
+    { "source": "Penang_Assembly_Test", "target": "Port_of_Singapore", "transit_time_days": 1, "volume_weight": 0.5, "risk_score": 0.05 },
+    { "source": "Chinese_Auto_Parts_Plant_Ningbo", "target": "Port_of_Shanghai", "transit_time_days": 1, "volume_weight": 1.0, "risk_score": 0.1 },
+
+    { "source": "Port_of_Kaohsiung", "target": "Strait_of_Malacca", "transit_time_days": 4, "volume_weight": 0.2, "risk_score": 0.15 },
+    { "source": "Port_of_Kaohsiung", "target": "Port_of_LA_LongBeach", "transit_time_days": 14, "volume_weight": 0.15, "risk_score": 0.2 },
+    { "source": "Port_of_Singapore", "target": "Strait_of_Malacca", "transit_time_days": 1, "volume_weight": 0.6, "risk_score": 0.25 },
+    { "source": "Port_of_Shanghai", "target": "Port_of_LA_LongBeach", "transit_time_days": 14, "volume_weight": 0.5, "risk_score": 0.15 },
+    { "source": "Port_of_Shanghai", "target": "Panama_Canal", "transit_time_days": 21, "volume_weight": 0.5, "risk_score": 0.2 },
+
+    { "source": "Strait_of_Malacca", "target": "Suez_Canal", "transit_time_days": 17, "volume_weight": 0.9, "risk_score": 0.35 },
+    { "source": "Suez_Canal", "target": "Port_of_Rotterdam", "transit_time_days": 9, "volume_weight": 1.0, "risk_score": 0.3 },
+    { "source": "Panama_Canal", "target": "Port_of_Savannah", "transit_time_days": 7, "volume_weight": 1.0, "risk_score": 0.25 },
+
+    { "source": "Port_of_Rotterdam", "target": "Euro_Auto_Factory_Wolfsburg", "transit_time_days": 2, "volume_weight": 0.55, "risk_score": 0.05 },
+    { "source": "Port_of_Rotterdam", "target": "EU_Electronics_Assembly_Eindhoven", "transit_time_days": 3, "volume_weight": 0.45, "risk_score": 0.05 },
+    { "source": "Port_of_LA_LongBeach", "target": "US_Tech_Assembly_Austin", "transit_time_days": 4, "volume_weight": 0.6, "risk_score": 0.1 },
+    { "source": "Port_of_LA_LongBeach", "target": "US_Auto_Assembly_Detroit", "transit_time_days": 5, "volume_weight": 0.4, "risk_score": 0.12 },
+    { "source": "Port_of_Savannah", "target": "US_Auto_Assembly_Detroit", "transit_time_days": 3, "volume_weight": 1.0, "risk_score": 0.1 },
+
+    { "source": "US_Tech_Assembly_Austin", "target": "Global_Tech_Corp", "transit_time_days": 0, "volume_weight": 0.65, "risk_score": 0.0 },
+    { "source": "EU_Electronics_Assembly_Eindhoven", "target": "Global_Tech_Corp", "transit_time_days": 0, "volume_weight": 0.35, "risk_score": 0.0 },
+    { "source": "Euro_Auto_Factory_Wolfsburg", "target": "Global_Auto_Corp", "transit_time_days": 0, "volume_weight": 0.5, "risk_score": 0.0 },
+    { "source": "US_Auto_Assembly_Detroit", "target": "Global_Auto_Corp", "transit_time_days": 0, "volume_weight": 0.5, "risk_score": 0.0 }
+  ]
+} 

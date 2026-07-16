@@ -1,7 +1,15 @@
 import networkx as nx
 
 
-def stimulateShock(G: nx.DiGraph, source: str, intensity: float, obsPeriod: int) -> dict: 
+def stimulateShock(G: nx.DiGraph, source: str, intensity: float, obsPeriod: int) -> dict:
+    if source not in G:
+        return {node: 0.0 for node in G.nodes}
+ 
+    if not nx.is_directed_acyclic_graph(G):
+        raise ValueError(
+            "stimulateShock requires a DAG - the supply chain graph contains a cycle, "
+            "which the risk propagation model cannot resolve in a single topological pass."
+        )
 
     riskScore = {node: 0.0 for node in G.nodes}  
     arrivalTime = {node: float('inf') for node in G.nodes}
@@ -45,7 +53,7 @@ def stimulateShock(G: nx.DiGraph, source: str, intensity: float, obsPeriod: int)
 
 if __name__ == "__main__": 
     testGraph = nx.DiGraph()
-    testGraph.add_node("Factory_A", buffer_days=5)          # buffer days represent the good we have in stock
+    testGraph.add_node("Factory_A", buffer_days=5)          
     testGraph.add_node("Factory_B", buffer_days=7)
     testGraph.add_edge("Factory_A", "Factory_B", volume_weight =0.8, transit_time_days=10)
 

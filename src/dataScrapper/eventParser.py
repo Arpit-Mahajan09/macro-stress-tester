@@ -5,7 +5,13 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from dotenv import load_dotenv
 
+from src.graphEngine import supplyChainGraph
+
 load_dotenv()
+
+cur = os.path.dirname(os.path.abspath(__file__))
+jsonPath = os.path.join(cur, "..", "..", "data", "supply_chain.json")
+G = supplyChainGraph(jsonPath)
 
 class DisruptionEvent(BaseModel): 
     isDisruption : bool = Field(
@@ -29,28 +35,34 @@ class DisruptionEvent(BaseModel):
     )
 
 class NewsAnalysisPipeline: 
+    TEXT_TRUNCATE_CHARS = 6000
+
     def __init__(self): 
         self.llm=ChatGroq(model="llama-3.3-70b-versatile", temperature=0)
         self.structured_llm = self.llm.with_structured_output(DisruptionEvent)
     
     def parseArticles(self, title: str, full_text: str) -> DisruptionEvent:
         prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are an elite geopolitical intelligence parser. Your objective is to extract structured operational indicators from unstructured financial news.
+            ("system", """You are an elite geopolitical intelligence parser. Your objective 
+             is to extract structured operational indicators from unstructured financial news.
             
             Valid network nodes available in system context:
-            - Suez_Canal
-            - Taiwan_Semi_Fab
-            - Port_of_Rotterdam
-            - Port_of_Kaohsiung
-            - Euro_Auto_Factory
-            - Port_of_LA
-            - US_Tech_Assembly
-            - Global_Tech_Corp
+            {node_list}
+            
+            CRITICAL: If the disruption described does not clearly correspond to one of the
+            exact node IDs above, do NOT invent a new node name and do NOT guess the closest
+            match. Leave mappedNode null/unset instead. A fabricated but plausible-looking
+            node ID is worse than reporting no match — it would silently feed an incorrect
+            input into the downstream risk simulation with no indication anything went wrong.
             """),
             ("user", "Analyze the following news item:\n\nTitle: {title}\nContent: {text}")
         ])
         chain = prompt | self.structured_llm
-        return chain.invoke({"title": title, "text": full_text[:4000]})
+        try: 
+            return chain.invoke({"title": title, "text": full_text[:4000]})
+        except Exception as e: 
+            print(f"[eventParser] failed to parse article '{title[:60]}': {e}")
+            return None
 
 if __name__ == "__main__": 
     sample_title = "Massive labor strike brings Port of Rotterdam to an absolute standstill"
