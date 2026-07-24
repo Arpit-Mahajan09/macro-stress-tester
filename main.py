@@ -3,16 +3,23 @@ import time
 from rich.console import Console
 from rich.table import Table 
 from rich.panel import Panel
-from rich.layout import Layout
 from rich import print as rprint 
 from dotenv import load_dotenv
 
 from src.dataScrapper.newsScrapper import NewsScraper
 from src.dataScrapper.eventParser import NewsAnalysisPipeline
-from src.tools.simTools import stimulate_supply_chain_shock_tool
+from src.tools.simTools import G
+from src.stimulator import stimulateShock
+from src.decisonEngine import recommend, ReadableMessage
+from src.finImp import FinancialImpactEstimator, PROXY_MAP
+
 
 console = Console()
 load_dotenv()
+
+_narrator = ReadableMessage()
+_finance = FinancialImpactEstimator()
+ 
 
 def displayDashB(): 
     console.clear()
@@ -33,7 +40,7 @@ def runCycle():
 
     with console.status("[bold yellow]Analyzing threat vectors...[/bold yellow]", spinner="dots"): 
         for article in rawArticle: 
-            event = parser.parseArticles(article['title'], article['full_text'][:4000])
+            event = parser.parseArticles(article['title'], article['full_text'])
             if event and event.isDisruption and event.mappedNode: 
                 active_threat.append((article["title"], event))
 
@@ -55,25 +62,48 @@ def runCycle():
         )
 
     highestThreat = max(active_threat, key=lambda x: x[1].mappedIntensity or 0)[1]
+    intensity = highestThreat.mappedIntensity or 0.5
+    obsPeriod = highestThreat.impliedObsPeriod or 30
     console.print(f"\n[bold blue]Executing NetworkX Cascade Simulation for {highestThreat.mappedNode}...[/bold blue]")
 
     try: 
-        simulation_report = stimulate_supply_chain_shock_tool.invoke({
-            "source": highestThreat.mappedNode,
-            "intensity": highestThreat.mappedIntensity or 0.5,
-            "obsPeriod": highestThreat.impliedObsPeriod or 30
-        })
+
+        riskScores = stimulateShock(G, highestThreat.mappedNode, intensity, obsPeriod)
+        impactedNodes = sorted(
+            ((n, r) for n, r in riskScores.items() if r > 0.0),
+            key=lambda x: x[1], reverse=True
+        )
+
+        if not impactedNodes: 
+            console.print("[green]No downstream nodes affected within the observation window.[/green]")
+            return
         
-        # Display the final mathematical impact
+        report_lines = [f"Origin: {highestThreat.mappedNode} (Intensity: {intensity:.0%}, Window: {obsPeriod}d)\n"]
+
+        for node, risk in impactedNodes[:5]: 
+            rec = recommend(node, risk) 
+            narrated = _narrator.create_message(rec)
+            report_lines.append(f"[cyan]{node}[/cyan] — {risk:.1%} risk")
+            report_lines.append(f"  {narrated}")
+ 
+            if node in PROXY_MAP:
+                try:
+                    fin_report = _finance.estimate_from_graph_node(node, risk)
+                    report_lines.append(f"  [yellow]{fin_report}[/yellow]".replace("\n", "\n  "))
+                except Exception as e:
+                    report_lines.append(f"  [dim]Financial estimate unavailable: {e}[/dim]")
+            report_lines.append("")
+ 
         report_panel = Panel(
-            simulation_report, 
-            title="[bold yellow]Agent Impact Projections[/bold yellow]", 
+            "\n".join(report_lines),
+            title="[bold yellow]Agent Impact Projections & Recommendations[/bold yellow]",
             border_style="yellow"
         )
         console.print(report_panel)
-        
+ 
     except Exception as e:
         console.print(f"[bold red]Simulation Error:[/bold red] {str(e)}")
+
 
 if __name__ == "__main__":
     if not os.getenv("GROQ_API_KEY"):

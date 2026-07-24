@@ -19,8 +19,8 @@ def dataGatherer():
 
             actionableData.append(parsedEvent)
 
-        print(f"Total Actionable Threats: {len(actionableData)}")
-        return actionableData
+    print(f"Total Actionable Threats: {len(actionableData)}")
+    return actionableData
 
 
 if __name__ == "__main__":

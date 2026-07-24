@@ -1,21 +1,28 @@
 # Agent Framework
 langchain
-langchain-community
-langchain-openai
-transformers
-
+langchain-classic
+langchain-groq
+langchain-core
+ 
+# Data validation / structured output
+pydantic
+ 
 # Graph and Data Math
 networkx
 numpy
 pandas
-PyQt6
-
-# Data Scrapping
+ 
+# Visualization (optional, only used by graphEngine.py's __main__ block)
+matplotlib
+ 
+# Financial data
+yfinance
+ 
+# Data Scraping
 feedparser
 beautifulsoup4
 requests
-
+ 
 # Environment & CLI Setup
 python-dotenv
 rich
-click
